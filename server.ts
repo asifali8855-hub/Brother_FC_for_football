@@ -55,7 +55,8 @@ async function startServer() {
       streak: 0,
       currentDay: 1,
       completedDays: [],
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      loginHistory: [new Date().toISOString()]
     };
     
     db.users.push(newUser);
@@ -74,6 +75,11 @@ async function startServer() {
     }
     // Update lastLogin for active user tracking
     user.lastLogin = new Date().toISOString();
+    
+    // Add to login history
+    if (!user.loginHistory) user.loginHistory = [];
+    user.loginHistory.push(new Date().toISOString());
+    
     saveDb(db);
     res.json({ user });
   });
@@ -134,6 +140,29 @@ async function startServer() {
     } else {
       res.status(404).json({ error: "User not found" });
     }
+  });
+
+  // Get user history and stats
+  app.get("/api/user/:userId/history", (req, res) => {
+    const { userId } = req.params;
+    const db = getDb();
+    const user = db.users.find(u => u.id === userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const totalLogins = (user.loginHistory || []).length;
+    const totalXP = user.xp || 0;
+    const completedDays = user.completedDays || [];
+    
+    res.json({
+      createdAt: user.createdAt,
+      totalLogins,
+      totalXP,
+      completedDays,
+      loginHistory: user.loginHistory || []
+    });
   });
 
   // --- End API Routes ---
