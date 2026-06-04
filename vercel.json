@@ -1,14 +1,17 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
   "outputDirectory": "dist",
-  "env": {
-    "NODE_ENV": "production"
-  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
+      "destination": "/server.cjs"
+    },
+    {
+      "source": "/:path*",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
