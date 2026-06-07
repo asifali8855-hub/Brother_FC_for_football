@@ -3,8 +3,11 @@ import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
-// Data store setup (using a simple local JSON file to abide by constraints)
-const DB_PATH = path.join(process.cwd(), "local_db.json");
+
+// Data store setup - use /tmp for Vercel production, local for development
+const DB_PATH = process.env.NODE_ENV === 'production' 
+  ? '/tmp/local_db.json' 
+  : path.join(process.cwd(), "local_db.json");
 
 interface DB {
   users: any[];
@@ -12,21 +15,30 @@ interface DB {
 }
 
 function getDb(): DB {
-  if (!fs.existsSync(DB_PATH)) {
-    const initial: DB = { users: [], progress: [] };
-    fs.writeFileSync(DB_PATH, JSON.stringify(initial, null, 2));
-    return initial;
+  try {
+    if (!fs.existsSync(DB_PATH)) {
+      const initial: DB = { users: [], progress: [] };
+      fs.writeFileSync(DB_PATH, JSON.stringify(initial, null, 2));
+      return initial;
+    }
+    return JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
+  } catch (error) {
+    console.error("Database read error:", error);
+    return { users: [], progress: [] };
   }
-  return JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
 }
 
 function saveDb(data: DB) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error("Database write error:", error);
+  }
 }
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   app.use(express.json());
   app.use(cors());
@@ -182,8 +194,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
