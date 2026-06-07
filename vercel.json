@@ -13,5 +13,10 @@
   ],
   "env": {
     "NODE_ENV": "production"
+  },
+  "functions": {
+    "dist/server.cjs": {
+      "maxDuration": 30
+    }
   }
 }
